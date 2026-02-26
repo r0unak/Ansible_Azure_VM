@@ -1,0 +1,43 @@
+---
+resource_group: "connect-one"      #VM RG
+network_resource_group: "Ansible"  #VNet/Subnet RG
+env_prefix: "prod"
+location: "westus3"
+#app_name: "db"
+#vm_number: "01"
+
+vnet_name: vnet-connect
+subnet_name: snet-connect
+
+os_type: "linux"      # or "windows"
+admin_username: "azureuser"
+admin_password: "ChangeMe!Pr0dP@ssw0rd"  
+
+#vnet_cidr: "10.20.0.0/16"
+#subnet_cidr: "10.20.10.0/24"
+
+# Managed identity (example: SystemAssigned)
+enable_msi: true
+msi_type: "SystemAssigned"   #UserAssigned
+msi_uai_ids: "/subscriptions/cddf40cb-4cc1-4144-b855-a55070f66106/resourceGroups/Ansible/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mytestid"
+
+vm_size: "Standard_D4s_v5"
+  #data_disks:
+  # - { name: "data1", size_gb: 256, lun: 0, sku: "Premium_LRS" }
+
+data_disks:
+  - name: "{{ vm_name }}-data0"
+    lun: 0
+    disk_size_gb: 128           # <-- correct key
+    managed_disk_type: StandardSSD_LRS   # <-- correct key
+    # optional:
+    # caching: ReadOnly
+    # delete_option: Delete
+
+
+azure_resource_tags:
+  env: "prod"
+  owner: "platform"
+  criticality: "high"
+vm_tags:
+  role: "dbi"

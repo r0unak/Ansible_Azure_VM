@@ -1,0 +1,39 @@
+---
+- name: Load OS-specific vars
+  ansible.builtin.include_vars:
+    file: "{{ (os_type | lower) }}.yml"
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - admin_password is defined
+      - (admin_password | length) >= 12
+    fail_msg: "admin_password must be defined and at least 12 characters. Use Ansible Vault or env var."
+    success_msg: "admin_password looks good."
+  no_log: true
+
+    #- name: Ensure resource group
+    #  ansible.builtin.include_tasks: resource_group.yml
+    #  when: create_rg | bool
+
+    #- name: Ensure virtual network and subnet
+    #  ansible.builtin.include_tasks: network.yml
+    # when: create_network | bool
+
+- name: Show vars before NIC
+  ansible.builtin.debug:
+    msg:
+      resource_group: "{{ resource_group | default('UNDEFINED') }}"
+      vnet_name: "{{ vnet_name | default('UNDEFINED') }}"
+      subnet_name: "{{ subnet_name | default('UNDEFINED') }}"
+
+- name: Ensure NIC (private only; no public IP)
+  ansible.builtin.include_tasks: nic.yml
+
+- name: Ensure VM
+  ansible.builtin.include_tasks: vm.yml
+  when: create_vm | bool
+
+- name: Ensure/attach data disks (optional pattern)
+  ansible.builtin.include_tasks: disks.yml
+  when: create_data_disks | bool and (data_disks | length > 0)

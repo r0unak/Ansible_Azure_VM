@@ -1,0 +1,62 @@
+---
+# --------- High-level switches ----------
+create_rg: false
+create_network: false
+create_vm: true
+create_data_disks: false        # optional; attach in vm.yml or via disks.yml
+
+# --------- Auth (from env or Azure CLI) ----------
+subscription_id: "{{ lookup('env', 'AZURE_SUBSCRIPTION_ID') | default(omit) }}"
+tenant: "{{ lookup('env', 'AZURE_TENANT') | default(omit) }}"
+client_id: "{{ lookup('env', 'AZURE_CLIENT_ID') | default(omit) }}"
+client_secret: "{{ lookup('env', 'AZURE_CLIENT_SECRET') | default(omit) }}"
+
+# --------- Common ----------
+location: "eastus"
+env_prefix: "dev"
+app_name: "app"
+vm_number: "01"
+
+# Names
+rg_name: "{{ env_prefix }}-rg"
+vnet_name: "{{ env_prefix }}-vnet"
+subnet_name: "{{ env_prefix }}-subnet"
+nic_name: "{{ env_prefix }}-nic-{{ app_name }}-{{ vm_number }}"
+vm_name: "{{ env_prefix }}-vm-{{ app_name }}-{{ vm_number }}"
+
+# Network CIDRs
+#vnet_cidr: "10.10.0.0/16"
+#subnet_cidr: "10.10.1.0/24"
+
+# VM common
+os_type: "linux"                 # or "windows"
+vm_size: "Standard_D2s_v5"
+admin_username: "azureuser"
+
+# --------- Password-based authentication ----------
+# IMPORTANT: Use Ansible Vault for these in real environments.
+admin_password: "{{ lookup('env', 'AZURE_VM_ADMIN_PASSWORD') | default(omit) }}"
+
+# Linux password auth (no SSH key by default)
+ssh_password_enabled: true
+
+# --------- Managed identity (optional) ----------
+enable_msi: false
+# One of: "SystemAssigned", "UserAssigned", "Both"
+msi_type: "SystemAssigned"
+# List of resource IDs for UAIs if using UserAssigned or Both
+msi_uai_ids: []  # e.g., ['/subscriptions/xxx/resourceGroups/rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/identity1']
+
+# --------- Disks ----------
+os_disk_type: "Premium_LRS"
+data_disks: []   # e.g., [{ name:'data1', size_gb:128, lun:0, sku:'Premium_LRS' }]
+
+# --------- Tags ----------
+# Base tags applied to all resources
+base_tags:
+  owner: "platform"
+  env: "{{ env_prefix }}"
+  app: "{{ app_name }}"
+
+# Extra tags applied only at the VM (merged with 'tags')
+vm_tags: {}

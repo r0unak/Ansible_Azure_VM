@@ -1,0 +1,22 @@
+---
+- name: Create prod Linux VM (private NIC; password auth; data disk)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  # <-- add this
+  vars_files:
+    - ../group_vars/all.yml
+
+  vars_prompt:
+    - name: admin_password
+      prompt: "Enter admin password (must be at least 12 characters)"
+      private: yes
+
+  vars:
+    vm_name: prod-linux-01
+    os_type: Linux
+    admin_username: azureuser
+
+  roles:
+    - role: azure_vm

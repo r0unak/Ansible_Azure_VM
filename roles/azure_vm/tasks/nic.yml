@@ -1,0 +1,80 @@
+---
+# 1) Lookup VNet and Subnet in the network RG
+- name: Lookup VNet
+  azure.azcollection.azure_rm_virtualnetwork_info:
+    resource_group: "{{ network_resource_group }}"
+    name: "{{ vnet_name }}"
+  register: vnet_info
+
+- name: Assert VNet exists
+  ansible.builtin.assert:
+    that:
+      - vnet_info.virtualnetworks | length > 0
+    fail_msg: "VNet '{{ vnet_name }}' not found in RG '{{ network_resource_group }}'"
+
+- name: Lookup subnet
+  azure.azcollection.azure_rm_subnet_info:
+    resource_group: "{{ network_resource_group }}"
+    virtual_network_name: "{{ vnet_name }}"
+    name: "{{ subnet_name }}"
+  register: subnet_info
+
+- name: Assert subnet exists
+  ansible.builtin.assert:
+    that:
+      - subnet_info.subnets | length > 0
+    fail_msg: "Subnet '{{ subnet_name }}' not found in VNet '{{ vnet_name }}'"
+
+# 2) Optional: ensure region alignment
+- name: Assert VNet region matches 'location'
+  ansible.builtin.assert:
+    that:
+      - vnet_info.virtualnetworks[0].location == location
+    fail_msg: >
+      Region mismatch. VNet '{{ vnet_name }}' is in
+      '{{ vnet_info.virtualnetworks[0].location | default('UNKNOWN') }}',
+      but 'location' is '{{ location }}'. Update 'location' to match.
+
+# 3) Create NIC using VNet **ID** + Subnet **NAME**
+- name: Create NIC (private only) - dynamic IP
+  azure.azcollection.azure_rm_networkinterface:
+    resource_group: "{{ resource_group }}"       # VM RG (e.g., connect-one)
+    name: "{{ nic_name }}"
+    location: "{{ location }}"
+    virtual_network: "{{ vnet_info.virtualnetworks[0].id }}"  # FULL VNet ID
+    subnet: "{{ subnet_name }}"                                 # NAME ONLY
+    create_with_security_group: false
+    ip_configurations:
+      - name: ipconfig1
+        private_ip_allocation_method: Dynamic
+    tags: "{{ azure_resource_tags | default({}) }}"
+  register: nic_result
+
+
+
+# 4) Enforce no-NSG on the NIC (idempotent)
+#    Use 'security_group' (or 'security_group_name') to clear association.
+- name: Detach NSG from NIC (ensure none)
+  azure.azcollection.azure_rm_networkinterface:
+    resource_group: "{{ resource_group }}"
+    name: "{{ nic_name }}"
+    security_group: null
+    create_with_security_group: false
+  register: nic_cleanup_result
+
+
+# 5) Read back NIC to verify
+- name: Read back NIC
+  azure.azcollection.azure_rm_networkinterface_info:
+    resource_group: "{{ resource_group }}"
+    name: "{{ nic_name }}"
+  register: nic_after
+
+- name: Show current NSG association on NIC (safe)
+  ansible.builtin.debug:
+    msg: >-
+      {{
+        nic_after | json_query('networkinterfaces[0].network_security_group')
+        | default(nic_after | json_query('networkinterfaces[0].security_group'))
+        | default('none')
+      }}

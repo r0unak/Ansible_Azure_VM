@@ -1,0 +1,11 @@
+---
+- name: Create managed data disks (optional pattern)
+  azure.azcollection.azure_rm_manageddisk:
+    resource_group: "{{ rg_name }}"
+    name: "{{ item.name }}"
+    location: "{{ location }}"
+    storage_account_type: "{{ item.sku | default('Premium_LRS') }}"
+    disk_size_gb: "{{ item.size_gb | int }}"
+  loop: "{{ data_disks | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"

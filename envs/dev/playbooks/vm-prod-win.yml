@@ -1,0 +1,22 @@
+- name: Create dev Win VM 
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  # <-- add this
+  vars_files:
+    - ../group_vars/all.yml
+
+  vars_prompt:
+    - name: admin_password
+      prompt: "Enter admin password (must be at least 12 characters)"
+      private: yes
+
+  vars:
+    vm_name: dev-win-01
+    os_type: windows
+    admin_username: azureuser
+
+  roles:
+    - role: azure_vm
+
