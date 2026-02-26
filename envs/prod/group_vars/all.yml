@@ -11,7 +11,7 @@ subnet_name: snet-connect
 
 os_type: "linux"      # or "windows"
 admin_username: "azureuser"
-admin_password: "ChangeMe!Pr0dP@ssw0rd"  
+admin_password: ""  
 
 #vnet_cidr: "10.20.0.0/16"
 #subnet_cidr: "10.20.10.0/24"
