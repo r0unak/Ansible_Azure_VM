@@ -43,7 +43,6 @@
     name: "{{ vm_name }}"
     location: "{{ location }}"
     vm_size: "{{ vm_size }}"
-      #network_interfaces: ["{{ nic_name }}"]
     network_interface_names:
       - "{{ nic_result.state.id }}"
     admin_username: "{{ admin_username }}"
@@ -72,24 +71,16 @@
     vm_size: "{{ vm_size }}"
     network_interface_names:
       - "{{ nic_result.state.id }}"
-    # Windows-specific flag
     os_type: "Windows"
-    # Auth
     admin_username: "{{ admin_username }}"
     admin_password: "{{ admin_password }}"
-    # For Windows, azure_rm_virtualmachine handles local admin/password.
-    # Enable WinRM in your post-provision steps if you need config management.
-    # Image from roles/azure_vm/vars/windows.yml
     image:
       offer: "{{ image.offer }}"
       publisher: "{{ image.publisher }}"
       sku: "{{ image.sku }}"
       version: "{{ image.version }}"
-    # Disks
     managed_disk_type: "{{ os_disk_type }}"
     data_disks: "{{ data_disks | default([]) }}"
-    # Managed Identity (optional)
     vm_identity: "{{ vm_identity_param | default(omit) }}"
-    # Tags
     tags: "{{ base_tags | combine(vm_tags | default({})) }}"
   no_log: false
